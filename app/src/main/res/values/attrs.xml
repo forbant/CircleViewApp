@@ -2,13 +2,20 @@
 <resources>
     <declare-styleable name="CustomCircleView">
         <attr name="style_one" format="dimension"/>
+        <attr name="style_two" format="dimension"/>
+        <attr name="style_three" format="color"/>
         <attr name="innerRadius" format="dimension"/>
-        <attr name="strokeColor" format="color"/>
-        <attr name="strokeWidth" format="dimension"/>
         <attr name="highlightEnable" format="boolean"/>
         <attr name="highlightColor" format="color"/>
     </declare-styleable>
 
     <declare-styleable name="CIV">
+        <attr name="src" format="reference" />
+    </declare-styleable>
+
+    <declare-styleable name="StrokedView">
+        <attr name="strokeColor" format="color"/>
+        <attr name="strokeWidth" format="dimension"/>
+        <attr name="srcImage" format="reference" />
     </declare-styleable>
 </resources>

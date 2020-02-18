@@ -8,22 +8,42 @@
     tools:context=".MainActivity">
 
     <com.example.circleviewapp.CIV
-        android:id="@+id/viewGlass"
+        android:id="@+id/circleView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="40dp"
-        android:src="@drawable/icon_cat"
+        android:padding="0dp"
+        app:src="@drawable/icon_cat"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageView
-        android:id="@+id/image"
-        android:layout_width="wrap_content"
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/viewGlass"
+        android:id="@+id/rellay"
+        app:layout_constraintTop_toBottomOf="@id/circleView"
         app:layout_constraintStart_toStartOf="parent"
-        android:scaleType="fitStart"/>
+        android:background="@color/colorFAB">
+
+        <com.example.circleviewapp.CIV
+            android:id="@+id/outer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="40dp"
+            app:src="@drawable/icon_cat"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+        <com.example.circleviewapp.CIV
+            android:id="@+id/inner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="80dp"
+            app:src="@drawable/glass"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </RelativeLayout>
 
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton

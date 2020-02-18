@@ -56,8 +56,8 @@ class CustomCircleView(
         if(attrs != null) {
             val attributesArray = context!!.obtainStyledAttributes(attrs, R.styleable.CustomCircleView, defStyleAttr, defStyleRes)
 
-            strokeColor = attributesArray.getColor(R.styleable.CustomCircleView_strokeColor, Color.TRANSPARENT)
-            strokeWidth = attributesArray.getDimension(R.styleable.CustomCircleView_strokeWidth, 0f)
+            strokeColor = attributesArray.getColor(R.styleable.CustomCircleView_style_three, Color.TRANSPARENT)
+            strokeWidth = attributesArray.getDimension(R.styleable.CustomCircleView_style_two, 0f)
             highlightEnable = attributesArray.getBoolean(R.styleable.CustomCircleView_highlightEnable, true)
             highlightColor = attributesArray.getColor(R.styleable.CustomCircleView_highlightColor, DEF_PRESS_HIGHLIGHT_COLOR)
 

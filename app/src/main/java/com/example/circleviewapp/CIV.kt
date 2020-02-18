@@ -3,18 +3,18 @@ package com.example.circleviewapp
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
+import android.view.View
 import android.view.animation.RotateAnimation
-import android.widget.ImageView
-import kotlin.math.atan2
-import kotlin.math.min
-import kotlin.math.roundToInt
+import kotlin.math.*
 
 class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
-    ImageView(context, attrs, defStyleAttr, defStyleRes) {
+    View(context, attrs, defStyleAttr, defStyleRes) {
 
     constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) :
             this(context, attrs, defStyleAttr, 0)
@@ -25,12 +25,11 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
     lateinit var mBitmapShader : Shader
     var mShaderMatrix : Matrix
-
     var mBitmapDrawBounds : RectF
-
+    var mBitmapDrawBounds_SECOND : RectF
     var mBitmap: Bitmap
-
     var mBitmapPaint : Paint
+    lateinit var mDrawable : Drawable
 
     var centerX : Double = 0.0
     var centerY : Double = 0.0
@@ -41,18 +40,38 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     var moveToAngle : Double = 0.0
 
     init {
+        if(attrs != null) {
+            val attributesArray = context!!.obtainStyledAttributes(
+                attrs,
+                R.styleable.CIV,
+                defStyleAttr,
+                defStyleRes
+            )
+
+            val id = attributesArray.getResourceId(R.styleable.CIV_src, 0)
+
+            mDrawable = resources.getDrawable(id, null)
+
+            attributesArray.recycle()
+        }
+
         mBitmap = getBitmapFromDrawable()?.also {
             mBitmapShader = BitmapShader(it, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
         }!!
         mShaderMatrix = Matrix()
-        mBitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG).also { it.shader = mBitmapShader }
+        mBitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG).also {
+            it.shader = mBitmapShader
+        }
         mBitmapDrawBounds = RectF()
+        mBitmapDrawBounds_SECOND = RectF()
 
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
+        var processed = false
         when(event?.action) {
             MotionEvent.ACTION_DOWN -> {
+                if(!touchedInCircle(event.x, event.y)) return false
                 offsetAngle = Math.toDegrees(atan2(event.x - centerX, centerY - event.y)).roundToInt().toDouble()
             }
             MotionEvent.ACTION_MOVE -> {
@@ -60,9 +79,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
                 offsetRaw = pointedAngle - offsetAngle
                 offsetAngle = pointedAngle
                 moveToAngle = startAngle.toFloat() + offsetRaw
-
-                animateView(startAngle.toFloat(), moveToAngle.toFloat(), 0)
-
+                rotateWithMatrix(startAngle, moveToAngle)
                 startAngle = moveToAngle
             }
             MotionEvent.ACTION_UP -> {
@@ -71,20 +88,36 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         return true
     }
 
-    private fun animateView(_prevAngle: Float, _newAngle: Float, i: Int) {
-
-        val rotationAnimation = RotateAnimation(
-            _prevAngle,
-            _newAngle,
-            centerX.toFloat(),
-            centerY.toFloat()
-        )
-        rotationAnimation.duration = i.toLong()
-        rotationAnimation.fillBefore = true
-        rotationAnimation.fillAfter = true
-        rotationAnimation.isFillEnabled = true
-        this.startAnimation(rotationAnimation)
+    private fun rotateWithMatrix(startAngle: Double, moveToAngle: Double) {
+        val angle = moveToAngle.toFloat() - startAngle.toFloat()
+        mShaderMatrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
+        mBitmapShader.setLocalMatrix(mShaderMatrix)
+        invalidate()
     }
+
+    private fun touchedInCircle(x: Float, y: Float): Boolean {
+        val distance = sqrt(
+            (mBitmapDrawBounds.centerX().toDouble() - x).pow(2.0) +
+                    (mBitmapDrawBounds.centerY().toDouble() - y).pow(2.0)
+        )
+
+        return distance <= (mBitmapDrawBounds.width() / 2)
+    }
+
+//    private fun animateView(_prevAngle: Float, _newAngle: Float, i: Int) {
+//
+//        val rotationAnimation = RotateAnimation(
+//            _prevAngle,
+//            _newAngle,
+//            centerX.toFloat(),
+//            centerY.toFloat()
+//        )
+//        rotationAnimation.duration = i.toLong()
+//        rotationAnimation.fillBefore = true
+//        rotationAnimation.fillAfter = true
+//        rotationAnimation.isFillEnabled = true
+//        this.startAnimation(rotationAnimation)
+//    }
 
     override fun onDraw(canvas: Canvas?) {
         canvas?.run {
@@ -108,26 +141,44 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         updateBitmapSize()
     }
 
-
-    override fun setImageBitmap(bm: Bitmap?) {
-        //super.setImageBitmap(bm)
-        bm?.let {
-            mBitmapShader = BitmapShader(it, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+    fun setImageBitmap(uri: Uri?) {
+        post {
+            mBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri!!))
+            } else {
+                MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+            }
+            processBitmap()
         }
+    }
+
+    private fun processBitmap() {
+        updateBitmapSize()
+
+        mBitmapShader = BitmapShader(mBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        mBitmapShader.setLocalMatrix(mShaderMatrix)
         mBitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG).also { it.shader = mBitmapShader }
     }
 
     private fun updateBitmapSize() {
-        val scale : Float = if(mBitmap.height > mBitmap.width) {
-            mBitmapDrawBounds.height() / mBitmap.height
+        val dx: Float
+        val dy: Float
+        val scale : Float
+
+        if(mBitmap.width < mBitmap.height) {
+            scale = mBitmapDrawBounds.width() / mBitmap.width
+            dx = mBitmapDrawBounds.left;
+            dy = mBitmapDrawBounds.top - (mBitmap.height * scale / 2f) + (mBitmapDrawBounds.width() / 2f)
         } else {
-            mBitmapDrawBounds.height() / mBitmap.height
+            scale = mBitmapDrawBounds.height() / mBitmap.height
+            dx = mBitmapDrawBounds.left - (mBitmap.width * scale / 2f) + (mBitmapDrawBounds.width() / 2f)
+            dy = mBitmapDrawBounds.top
+
         }
 
         mShaderMatrix.apply {
-            reset()
             setScale(scale, scale)
-            postTranslate(mBitmapDrawBounds.left, mBitmapDrawBounds.top)
+            postTranslate(dx, dy)
         }
         mBitmapShader.setLocalMatrix(mShaderMatrix)
     }
@@ -153,7 +204,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     }
 
     private fun getBitmapFromDrawable() : Bitmap? {
-        val d = drawable
+        val d = mDrawable
         if(d is BitmapDrawable) {
             return d.bitmap
         }
