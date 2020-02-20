@@ -8,9 +8,9 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import android.view.animation.RotateAnimation
 import kotlin.math.*
 
 class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
@@ -26,11 +26,16 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     lateinit var mBitmapShader : Shader
     var mShaderMatrix : Matrix
     var mBitmapDrawBounds : RectF
-    var mBitmapDrawBounds_SECOND : RectF
     var mBitmap: Bitmap
     var mBitmapPaint : Paint
-    lateinit var mDrawable : Drawable
 
+    //from attrs
+    lateinit var mDrawable : Drawable
+    private var mNumOfCircles: Int = 1
+    var mStickToGrid: Boolean = false
+
+
+    ////For test/////
     var centerX : Double = 0.0
     var centerY : Double = 0.0
     var offsetRaw : Double = 0.0
@@ -38,6 +43,8 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     var pointedAngle = 0.0
     var startAngle : Double = 0.0
     var moveToAngle : Double = 0.0
+    val ringsList: List<Ring>
+    var index : Int = 0
 
     init {
         if(attrs != null) {
@@ -51,6 +58,8 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             val id = attributesArray.getResourceId(R.styleable.CIV_src, 0)
 
             mDrawable = resources.getDrawable(id, null)
+            mNumOfCircles = attributesArray.getInt(R.styleable.CIV_numOfCircles, 1)
+            mStickToGrid = attributesArray.getBoolean(R.styleable.CIV_gridStick, false)
 
             attributesArray.recycle()
         }
@@ -63,23 +72,28 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             it.shader = mBitmapShader
         }
         mBitmapDrawBounds = RectF()
-        mBitmapDrawBounds_SECOND = RectF()
 
+        val rings = ArrayList<Ring>()
+        repeat(mNumOfCircles) {
+            rings.add(Ring(mBitmap))
+        }
+        ringsList = rings
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        var processed = false
         when(event?.action) {
             MotionEvent.ACTION_DOWN -> {
                 if(!touchedInCircle(event.x, event.y)) return false
                 offsetAngle = Math.toDegrees(atan2(event.x - centerX, centerY - event.y)).roundToInt().toDouble()
+                index = getPointedCircleIndex(event.x, event.y)
+                Log.e("POINT", "index $index")
             }
             MotionEvent.ACTION_MOVE -> {
                 pointedAngle = Math.toDegrees(atan2(event.x - centerX, centerY - event.y)).roundToInt().toDouble()
                 offsetRaw = pointedAngle - offsetAngle
                 offsetAngle = pointedAngle
                 moveToAngle = startAngle.toFloat() + offsetRaw
-                rotateWithMatrix(startAngle, moveToAngle)
+                rotateWithMatrix(startAngle, moveToAngle, index)
                 startAngle = moveToAngle
             }
             MotionEvent.ACTION_UP -> {
@@ -88,10 +102,13 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         return true
     }
 
-    private fun rotateWithMatrix(startAngle: Double, moveToAngle: Double) {
+    private fun rotateWithMatrix(startAngle: Double, moveToAngle: Double, index: Int) {
         val angle = moveToAngle.toFloat() - startAngle.toFloat()
-        mShaderMatrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
-        mBitmapShader.setLocalMatrix(mShaderMatrix)
+//        mShaderMatrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
+//        mBitmapShader.setLocalMatrix(mShaderMatrix)
+        ringsList[index]
+        ringsList[index].matrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
+        ringsList[index].shader.setLocalMatrix(ringsList[index].matrix)
         invalidate()
     }
 
@@ -100,28 +117,29 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             (mBitmapDrawBounds.centerX().toDouble() - x).pow(2.0) +
                     (mBitmapDrawBounds.centerY().toDouble() - y).pow(2.0)
         )
-
         return distance <= (mBitmapDrawBounds.width() / 2)
     }
 
-//    private fun animateView(_prevAngle: Float, _newAngle: Float, i: Int) {
-//
-//        val rotationAnimation = RotateAnimation(
-//            _prevAngle,
-//            _newAngle,
-//            centerX.toFloat(),
-//            centerY.toFloat()
-//        )
-//        rotationAnimation.duration = i.toLong()
-//        rotationAnimation.fillBefore = true
-//        rotationAnimation.fillAfter = true
-//        rotationAnimation.isFillEnabled = true
-//        this.startAnimation(rotationAnimation)
-//    }
+    private fun getPointedCircleIndex(x: Float, y: Float) : Int {
+        val distance = sqrt(
+            (mBitmapDrawBounds.centerX().toDouble() - x).pow(2.0) +
+                    (mBitmapDrawBounds.centerY().toDouble() - y).pow(2.0)
+        )
+
+        val baseRadius = mBitmapDrawBounds.width()/2
+        val circleWidth = baseRadius / mNumOfCircles
+
+        val index = ((-distance+baseRadius)/circleWidth).toInt()
+        Log.e("F(x)", "index $index")
+
+        return index
+    }
 
     override fun onDraw(canvas: Canvas?) {
         canvas?.run {
-            canvas.drawOval(mBitmapDrawBounds, mBitmapPaint)
+            for(item in ringsList) {
+                canvas.drawOval(item.bounds, item.paint)
+            }
         }
     }
 
@@ -138,7 +156,24 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         updateCircleDrawBounds()
-        updateBitmapSize()
+        rescaleBitmap()
+        updateBitmapMatrix()
+    }
+
+    private fun rescaleBitmap() {
+        val scale : Float = if(mBitmap.width < mBitmap.height) {
+            mBitmapDrawBounds.width() / mBitmap.width
+        } else {
+            mBitmapDrawBounds.height() / mBitmap.height
+        }
+        mBitmap = Bitmap.createScaledBitmap(
+            mBitmap,
+            (mBitmap.width*scale).toInt(),
+            (mBitmap.height*scale).toInt(),
+            false)
+        repeat(mNumOfCircles) {
+            ringsList[it].bitmap = mBitmap
+        }
     }
 
     fun setImageBitmap(uri: Uri?) {
@@ -153,27 +188,33 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     }
 
     private fun processBitmap() {
-        updateBitmapSize()
+        rescaleBitmap()
+        updateBitmapMatrix()
 
         mBitmapShader = BitmapShader(mBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
         mBitmapShader.setLocalMatrix(mShaderMatrix)
         mBitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG).also { it.shader = mBitmapShader }
+        repeat(mNumOfCircles){
+            ringsList[it].shader = BitmapShader(mBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+            ringsList[it].shader.setLocalMatrix(mShaderMatrix)
+            ringsList[it].paint = Paint(Paint.ANTI_ALIAS_FLAG)
+            ringsList[it].paint.shader = ringsList[it].shader
+        }
     }
 
-    private fun updateBitmapSize() {
+    private fun updateBitmapMatrix() {
         val dx: Float
         val dy: Float
         val scale : Float
 
         if(mBitmap.width < mBitmap.height) {
             scale = mBitmapDrawBounds.width() / mBitmap.width
-            dx = mBitmapDrawBounds.left;
+            dx = mBitmapDrawBounds.left
             dy = mBitmapDrawBounds.top - (mBitmap.height * scale / 2f) + (mBitmapDrawBounds.width() / 2f)
         } else {
             scale = mBitmapDrawBounds.height() / mBitmap.height
             dx = mBitmapDrawBounds.left - (mBitmap.width * scale / 2f) + (mBitmapDrawBounds.width() / 2f)
             dy = mBitmapDrawBounds.top
-
         }
 
         mShaderMatrix.apply {
@@ -181,6 +222,11 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             postTranslate(dx, dy)
         }
         mBitmapShader.setLocalMatrix(mShaderMatrix)
+        repeat(mNumOfCircles) {
+            ringsList[it].matrix.setScale(scale, scale)
+            ringsList[it].matrix.postTranslate(dx, dy)
+            ringsList[it].shader.setLocalMatrix(ringsList[it].matrix)
+        }
     }
 
     private fun updateCircleDrawBounds() {
@@ -196,8 +242,15 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             top += (contentHeight - contentWidth) / 2f
         }
 
-        val diameter = contentHeight.coerceAtMost(contentWidth)
-        mBitmapDrawBounds.set(left, top, left + diameter, top + diameter)
+        var diameter = contentHeight.coerceAtMost(contentWidth)
+        var circleDiameter = diameter
+        mBitmapDrawBounds.set(left, top, left + circleDiameter, top + circleDiameter)
+        repeat(mNumOfCircles) {
+            ringsList[it].bounds.set(left, top, left + circleDiameter, top + circleDiameter)
+            left += contentHeight/mNumOfCircles/2
+            top += contentHeight/mNumOfCircles/2
+            circleDiameter -= diameter/mNumOfCircles
+        }
 
         centerX = height / 2.0
         centerY = width / 2.0

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <attr name="HUY" format="reference"/>
     <declare-styleable name="CustomCircleView">
         <attr name="style_one" format="dimension"/>
         <attr name="style_two" format="dimension"/>
@@ -10,12 +11,16 @@
     </declare-styleable>
 
     <declare-styleable name="CIV">
-        <attr name="src" format="reference" />
+        <attr name="src" format="reference"/>
+        <attr name="gridStick" format="boolean"/>
+        <attr name="numOfCircles" format="integer"/>
+        <attr name="HUY"/>
     </declare-styleable>
 
     <declare-styleable name="StrokedView">
         <attr name="strokeColor" format="color"/>
         <attr name="strokeWidth" format="dimension"/>
         <attr name="srcImage" format="reference" />
+        <attr name="HUY"/>
     </declare-styleable>
 </resources>
