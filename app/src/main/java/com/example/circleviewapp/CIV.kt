@@ -30,7 +30,8 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     private var mNumOfCircles: Int = 1
 
 
-    var mStickToGrid: Boolean = true
+    var mStickToGrid: Boolean = false
+    var mStickAngle: Int = 0
     ////For test/////
     var centerX: Double = 0.0
     var centerY: Double = 0.0
@@ -55,6 +56,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             mDrawable = resources.getDrawable(id, null)
             mNumOfCircles = attributesArray.getInt(R.styleable.CIV_numOfCircles, 1)
             mStickToGrid = attributesArray.getBoolean(R.styleable.CIV_gridStick, false)
+            mStickAngle = attributesArray.getInt(R.styleable.CIV_stickAngle, 0)
 
             attributesArray.recycle()
         }
@@ -123,7 +125,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     }
 
     private fun tryToSnap() {
-        ringsList[index].tryToSnap()
+        ringsList[index].tryToSnap(mStickAngle)
         invalidate()
     }
 

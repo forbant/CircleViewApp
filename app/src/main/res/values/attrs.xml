@@ -4,5 +4,6 @@
         <attr name="src" format="reference"/>
         <attr name="gridStick" format="boolean"/>
         <attr name="numOfCircles" format="integer"/>
+        <attr name="stickAngle" format="integer"/>
     </declare-styleable>
 </resources>
