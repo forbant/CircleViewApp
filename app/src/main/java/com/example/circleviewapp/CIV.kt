@@ -30,7 +30,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     private var mNumOfCircles: Int = 1
 
 
-    var mStickToGrid: Boolean = false
+    var mStickToGrid: Boolean = true
     ////For test/////
     var centerX: Double = 0.0
     var centerY: Double = 0.0
@@ -99,14 +99,14 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
                 if(!touchedInCircle(event.x, event.y)) return false
 
                 offsetAngle = Math.toDegrees(
-                    atan2(event.x - centerX, centerY - event.y))
+                    atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
                     .roundToInt()
                     .toDouble()
                 index = getPointedCircleIndex(event.x, event.y)
             }
             MotionEvent.ACTION_MOVE -> {
                 pointedAngle = Math.toDegrees(
-                    atan2(event.x - centerX, centerY - event.y))
+                    atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
                     .roundToInt()
                     .toDouble()
                 offsetRaw = pointedAngle - offsetAngle
@@ -115,8 +115,16 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
                 rotateWithMatrix((moveToAngle-startAngle).toFloat(), index)
                 startAngle = moveToAngle
             }
+            MotionEvent.ACTION_UP -> {
+                if(mStickToGrid) tryToSnap()
+            }
         }
         return true
+    }
+
+    private fun tryToSnap() {
+        ringsList[index].tryToSnap()
+        invalidate()
     }
 
     private fun rotateWithMatrix(angle: Float, index: Int) {
@@ -126,16 +134,14 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
     private fun touchedInCircle(x: Float, y: Float): Boolean {
         val distance = sqrt(
-            (ringsList[0].bounds.centerX().toDouble() - x).pow(2.0) +
-                    (ringsList[0].bounds.centerY().toDouble() - y).pow(2.0)
+            ((width / 2.0) - x).pow(2.0) + ((height / 2.0) - y).pow(2.0)
         )
         return distance <= (ringsList[0].bounds.width() / 2)
     }
 
     private fun getPointedCircleIndex(x: Float, y: Float) : Int {
         val distance = sqrt(
-            (ringsList[0].bounds.centerX().toDouble() - x).pow(2.0) +
-                    (ringsList[0].bounds.centerY().toDouble() - y).pow(2.0)
+            ((width / 2.0) - x).pow(2.0) + ((height / 2.0) - y).pow(2.0)
         )
 
         val baseRadius = ringsList[0].bounds.width()/2
@@ -211,13 +217,14 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         } else {
             top += (contentHeight - contentWidth) / 2f
         }
-        centerX = height / 2.0
-        centerY = width / 2.0
+//        centerX = height / 2.0
+//        centerY = width / 2.0
 
         val diameter = contentHeight.coerceAtMost(contentWidth)
         var circleDiameter = diameter
-        repeat(mNumOfCircles) {
-            ringsList[it].bounds.set(left, top, left + circleDiameter, top + circleDiameter)
+
+        ringsList.forEach {ring ->
+            ring.bounds.set(left, top, left + circleDiameter, top + circleDiameter)
             left += contentHeight/mNumOfCircles/2
             top += contentHeight/mNumOfCircles/2
             circleDiameter -= diameter/mNumOfCircles

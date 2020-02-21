@@ -50,4 +50,11 @@ class Ring(bitmap: Bitmap) {
         return super.toString()
     }
 
+    fun tryToSnap() {
+        when {
+            (ringAngle < 10 && ringAngle > 0) -> rotateRing(-ringAngle)
+            (ringAngle > -10 && ringAngle < 0) -> rotateRing(-ringAngle)
+        }
+    }
+
 }
