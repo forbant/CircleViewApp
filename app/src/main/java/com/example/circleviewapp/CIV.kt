@@ -23,12 +23,8 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             this(context, null)
 
     private val ringsList: List<Ring>
-    lateinit var mBitmapShader : Shader
-    var mShaderMatrix : Matrix
-    var mBitmapDrawBounds : RectF
     var mBitmap: Bitmap
 
-    var mBitmapPaint : Paint
     //from attrs
     lateinit var mDrawable : Drawable
     private var mNumOfCircles: Int = 1
@@ -63,14 +59,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             attributesArray.recycle()
         }
 
-        mBitmap = getBitmapFromDrawable()?.also {
-            mBitmapShader = BitmapShader(it, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-        }!!
-        mShaderMatrix = Matrix()
-        mBitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG).also {
-            it.shader = mBitmapShader
-        }
-        mBitmapDrawBounds = RectF()
+        mBitmap = getBitmapFromDrawable()!!
 
         val rings = ArrayList<Ring>()
         repeat(mNumOfCircles) {
@@ -109,18 +98,22 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             MotionEvent.ACTION_DOWN -> {
                 if(!touchedInCircle(event.x, event.y)) return false
 
-                offsetAngle = Math.toDegrees(atan2(event.x - centerX, centerY - event.y)).roundToInt().toDouble()
+                offsetAngle = Math.toDegrees(
+                    atan2(event.x - centerX, centerY - event.y))
+                    .roundToInt()
+                    .toDouble()
                 index = getPointedCircleIndex(event.x, event.y)
             }
             MotionEvent.ACTION_MOVE -> {
-                pointedAngle = Math.toDegrees(atan2(event.x - centerX, centerY - event.y)).roundToInt().toDouble()
+                pointedAngle = Math.toDegrees(
+                    atan2(event.x - centerX, centerY - event.y))
+                    .roundToInt()
+                    .toDouble()
                 offsetRaw = pointedAngle - offsetAngle
                 offsetAngle = pointedAngle
                 moveToAngle = startAngle + offsetRaw
                 rotateWithMatrix((moveToAngle-startAngle).toFloat(), index)
                 startAngle = moveToAngle
-            }
-            MotionEvent.ACTION_UP -> {
             }
         }
         return true
@@ -133,19 +126,19 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
     private fun touchedInCircle(x: Float, y: Float): Boolean {
         val distance = sqrt(
-            (mBitmapDrawBounds.centerX().toDouble() - x).pow(2.0) +
-                    (mBitmapDrawBounds.centerY().toDouble() - y).pow(2.0)
+            (ringsList[0].bounds.centerX().toDouble() - x).pow(2.0) +
+                    (ringsList[0].bounds.centerY().toDouble() - y).pow(2.0)
         )
-        return distance <= (mBitmapDrawBounds.width() / 2)
+        return distance <= (ringsList[0].bounds.width() / 2)
     }
 
     private fun getPointedCircleIndex(x: Float, y: Float) : Int {
         val distance = sqrt(
-            (mBitmapDrawBounds.centerX().toDouble() - x).pow(2.0) +
-                    (mBitmapDrawBounds.centerY().toDouble() - y).pow(2.0)
+            (ringsList[0].bounds.centerX().toDouble() - x).pow(2.0) +
+                    (ringsList[0].bounds.centerY().toDouble() - y).pow(2.0)
         )
 
-        val baseRadius = mBitmapDrawBounds.width()/2
+        val baseRadius = ringsList[0].bounds.width()/2
         val circleWidth = baseRadius / mNumOfCircles
 
         return ((-distance+baseRadius)/circleWidth).toInt()
@@ -153,9 +146,9 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
     private fun rescaleBitmap() {
         val scale : Float = if(mBitmap.width < mBitmap.height) {
-            mBitmapDrawBounds.width() / mBitmap.width
+            ringsList[0].bounds.width() / mBitmap.width
         } else {
-            mBitmapDrawBounds.height() / mBitmap.height
+            ringsList[0].bounds.height() / mBitmap.height
         }
         mBitmap = Bitmap.createScaledBitmap(
             mBitmap,
@@ -194,26 +187,16 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         val scale : Float
 
         if(mBitmap.width < mBitmap.height) {
-            scale = mBitmapDrawBounds.width() / mBitmap.width
-            dx = mBitmapDrawBounds.left
-            dy = mBitmapDrawBounds.top - (mBitmap.height * scale / 2f) + (mBitmapDrawBounds.width() / 2f)
+            scale = ringsList[0].bounds.width() / mBitmap.width
+            dx = ringsList[0].bounds.left
+            dy = ringsList[0].bounds.top - (mBitmap.height * scale / 2f) + (ringsList[0].bounds.width() / 2f)
         } else {
-            scale = mBitmapDrawBounds.height() / mBitmap.height
-            dx = mBitmapDrawBounds.left - (mBitmap.width * scale / 2f) + (mBitmapDrawBounds.width() / 2f)
-            dy = mBitmapDrawBounds.top
+            scale = ringsList[0].bounds.height() / mBitmap.height
+            dx = ringsList[0].bounds.left - (mBitmap.width * scale / 2f) + (ringsList[0].bounds.width() / 2f)
+            dy = ringsList[0].bounds.top
         }
 
-        mShaderMatrix.apply {
-            setScale(scale, scale)
-            postTranslate(dx, dy)
-        }
-        mBitmapShader.setLocalMatrix(mShaderMatrix)
         ringsList.forEach { ring -> ring.updateBitmapMatrix(scale, dx, dy) }
-//        repeat(mNumOfCircles) {
-//            ringsList[it].matrix.setScale(scale, scale)
-//            ringsList[it].matrix.postTranslate(dx, dy)
-//            ringsList[it].shader.setLocalMatrix(ringsList[it].matrix)
-//        }
     }
 
     private fun updateCircleDrawBounds() {
@@ -233,7 +216,6 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
         val diameter = contentHeight.coerceAtMost(contentWidth)
         var circleDiameter = diameter
-        mBitmapDrawBounds.set(left, top, left + circleDiameter, top + circleDiameter)
         repeat(mNumOfCircles) {
             ringsList[it].bounds.set(left, top, left + circleDiameter, top + circleDiameter)
             left += contentHeight/mNumOfCircles/2
