@@ -59,4 +59,8 @@ class Ring(bitmap: Bitmap) {
         }
     }
 
+    fun isInRightPosition(): Boolean {
+        return ringAngle == 0f
+    }
+
 }

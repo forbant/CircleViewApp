@@ -27,8 +27,6 @@ class MainActivity : AppCompatActivity() {
             val intentPick = Intent(Intent.ACTION_PICK, Media.EXTERNAL_CONTENT_URI)
             startActivityForResult(intentPick, REQUEST_PICK)
         }
-
-
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

@@ -1,5 +1,7 @@
 package com.example.circleviewapp
 
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
@@ -119,6 +121,24 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             }
             MotionEvent.ACTION_UP -> {
                 if(mStickToGrid) tryToSnap()
+
+                var inRow = true
+                ringsList.forEach { ring -> if(!ring.isInRightPosition()) inRow = false }
+                if(inRow) {
+                    val scaleX = PropertyValuesHolder.ofFloat(SCALE_X, 1f, 1.2f, 1f)
+                    val scaleY = PropertyValuesHolder.ofFloat(SCALE_Y, 1f, 1.2f, 1f)
+                    val alpha = PropertyValuesHolder.ofFloat(ALPHA, 1f, 0.7f, 1f)
+
+
+                    ObjectAnimator.ofFloat(this, ROTATION, 360f, 0f).apply {
+                        duration = 1000
+                        start()
+                    }
+
+//                    ObjectAnimator.ofPropertyValuesHolder(this, scaleX, scaleY, alpha).apply {
+//                        start()
+//                    }
+                }
             }
         }
         return true
