@@ -1,7 +1,6 @@
 package com.example.circleviewapp
 
 import android.animation.ObjectAnimator
-import android.animation.PropertyValuesHolder
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
@@ -31,12 +30,9 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     lateinit var mDrawable : Drawable
     private var mNumOfCircles: Int = 1
 
-
     var mStickToGrid: Boolean = false
     var mStickAngle: Int = 0
     ////For test/////
-    var centerX: Double = 0.0
-    var centerY: Double = 0.0
     var offsetRaw: Double = 0.0
     var offsetAngle: Double = 0.0
     var pointedAngle = 0.0
@@ -125,19 +121,10 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
                 var inRow = true
                 ringsList.forEach { ring -> if(!ring.isInRightPosition()) inRow = false }
                 if(inRow) {
-                    val scaleX = PropertyValuesHolder.ofFloat(SCALE_X, 1f, 1.2f, 1f)
-                    val scaleY = PropertyValuesHolder.ofFloat(SCALE_Y, 1f, 1.2f, 1f)
-                    val alpha = PropertyValuesHolder.ofFloat(ALPHA, 1f, 0.7f, 1f)
-
-
                     ObjectAnimator.ofFloat(this, ROTATION, 360f, 0f).apply {
                         duration = 1000
                         start()
                     }
-
-//                    ObjectAnimator.ofPropertyValuesHolder(this, scaleX, scaleY, alpha).apply {
-//                        start()
-//                    }
                 }
             }
         }
@@ -239,8 +226,6 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         } else {
             top += (contentHeight - contentWidth) / 2f
         }
-//        centerX = height / 2.0
-//        centerY = width / 2.0
 
         val diameter = contentHeight.coerceAtMost(contentWidth)
         var circleDiameter = diameter
