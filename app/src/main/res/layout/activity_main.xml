@@ -12,7 +12,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="40dp"
-        app:src="@drawable/icon_cat"
         app:gridStick="true"
         app:stickAngle="45"
         app:numOfCircles="3"

@@ -11,6 +11,7 @@ import android.provider.MediaStore
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.graphics.drawable.toBitmap
 import kotlin.math.*
 
 class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
@@ -27,10 +28,11 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     var mBitmap: Bitmap
 
     //from attrs
-    lateinit var mDrawable : Drawable
+    var mDrawable : Drawable  = resources.getDrawable(R.drawable.ic_broken_image, null)
     private var mNumOfCircles: Int = 1
 
     var mStickToGrid: Boolean = false
+    var mCanRotate = true
     var mStickAngle: Int = 0
     ////For test/////
     var offsetRaw: Double = 0.0
@@ -49,7 +51,8 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
                 defStyleRes
             )
 
-            val id = attributesArray.getResourceId(R.styleable.CIV_src, 0)
+            var id = attributesArray.getResourceId(R.styleable.CIV_src, 0)
+            if(id == 0) id = R.drawable.ic_broken_image
 
             mDrawable = resources.getDrawable(id, null)
             mNumOfCircles = attributesArray.getInt(R.styleable.CIV_numOfCircles, 1)
@@ -89,41 +92,42 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             for(item in ringsList) {
                 canvas.drawOval(item.bounds, item.paint)
             }
-
         }
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        when(event?.action) {
-            MotionEvent.ACTION_DOWN -> {
-                if(!touchedInCircle(event.x, event.y)) return false
+        if(mCanRotate) {
+            when(event?.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    if(!touchedInCircle(event.x, event.y)) return false
 
-                offsetAngle = Math.toDegrees(
-                    atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
-                    .roundToInt()
-                    .toDouble()
-                index = getPointedCircleIndex(event.x, event.y)
-            }
-            MotionEvent.ACTION_MOVE -> {
-                pointedAngle = Math.toDegrees(
-                    atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
-                    .roundToInt()
-                    .toDouble()
-                offsetRaw = pointedAngle - offsetAngle
-                offsetAngle = pointedAngle
-                moveToAngle = startAngle + offsetRaw
-                rotateWithMatrix((moveToAngle-startAngle).toFloat(), index)
-                startAngle = moveToAngle
-            }
-            MotionEvent.ACTION_UP -> {
-                if(mStickToGrid) tryToSnap()
+                    offsetAngle = Math.toDegrees(
+                        atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
+                        .roundToInt()
+                        .toDouble()
+                    index = getPointedCircleIndex(event.x, event.y)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    pointedAngle = Math.toDegrees(
+                        atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
+                        .roundToInt()
+                        .toDouble()
+                    offsetRaw = pointedAngle - offsetAngle
+                    offsetAngle = pointedAngle
+                    moveToAngle = startAngle + offsetRaw
+                    rotateWithMatrix((moveToAngle-startAngle).toFloat(), index)
+                    startAngle = moveToAngle
+                }
+                MotionEvent.ACTION_UP -> {
+                    if(mStickToGrid) tryToSnap()
 
-                var inRow = true
-                ringsList.forEach { ring -> if(!ring.isInRightPosition()) inRow = false }
-                if(inRow) {
-                    ObjectAnimator.ofFloat(this, ROTATION, 360f, 0f).apply {
-                        duration = 1000
-                        start()
+                    var inRow = true
+                    ringsList.forEach { ring -> if(!ring.isInRightPosition()) inRow = false }
+                    if(inRow) {
+                        ObjectAnimator.ofFloat(this, ROTATION, 360f, 0f).apply {
+                            duration = 1000
+                            start()
+                        }
                     }
                 }
             }
@@ -244,6 +248,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         if(d is BitmapDrawable) {
             return d.bitmap
         }
-        return null
+        mDrawable = resources.getDrawable(R.drawable.ic_broken_image, null)
+        return mDrawable.toBitmap()
     }
 }

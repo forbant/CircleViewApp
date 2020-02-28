@@ -23,9 +23,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if(requestCode == REQUEST_PICK && resultCode == Activity.RESULT_OK) {
-            val selectedFile = data!!.data
-            circleView.setImageBitmap(selectedFile)
+        data?.run {
+            if(requestCode == REQUEST_PICK && resultCode == Activity.RESULT_OK) {
+                circleView.setImageBitmap(this.data)
+            }
         }
     }
 }
