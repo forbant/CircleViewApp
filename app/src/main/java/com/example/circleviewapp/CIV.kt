@@ -25,15 +25,17 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             this(context, null)
 
     private val ringsList: List<Ring>
-    var mBitmap: Bitmap
+    private var mBitmap: Bitmap
 
     //from attrs
     var mDrawable : Drawable  = resources.getDrawable(R.drawable.ic_broken_image, null)
     private var mNumOfCircles: Int = 1
 
-    var mStickToGrid: Boolean = false
+    var mSnap: Boolean = false
     var mCanRotate = true
+    var endAnimation : ObjectAnimator? = null
     var mStickAngle: Int = 0
+
     ////For test/////
     var offsetRaw: Double = 0.0
     var offsetAngle: Double = 0.0
@@ -56,8 +58,8 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
             mDrawable = resources.getDrawable(id, null)
             mNumOfCircles = attributesArray.getInt(R.styleable.CIV_numOfCircles, 1)
-            mStickToGrid = attributesArray.getBoolean(R.styleable.CIV_gridStick, false)
-            mStickAngle = attributesArray.getInt(R.styleable.CIV_stickAngle, 0)
+            mSnap = attributesArray.getBoolean(R.styleable.CIV_snap, false)
+            mStickAngle = attributesArray.getInt(R.styleable.CIV_snapAngleRange, 0)
 
             attributesArray.recycle()
         }
@@ -119,15 +121,12 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
                     startAngle = moveToAngle
                 }
                 MotionEvent.ACTION_UP -> {
-                    if(mStickToGrid) tryToSnap()
-
-                    var inRow = true
-                    ringsList.forEach { ring -> if(!ring.isInRightPosition()) inRow = false }
-                    if(inRow) {
-                        ObjectAnimator.ofFloat(this, ROTATION, 360f, 0f).apply {
-                            duration = 1000
-                            start()
-                        }
+                    if(mSnap)
+                        tryToSnap()
+                    endAnimation?.let {
+                        var inRow = true
+                        ringsList.forEach { ring -> if(!ring.isInRightPosition()) inRow = false }
+                        if(inRow) it.start()
                     }
                 }
             }
@@ -156,7 +155,6 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         val distance = sqrt(
             ((width / 2.0) - x).pow(2.0) + ((height / 2.0) - y).pow(2.0)
         )
-
         val baseRadius = ringsList[0].bounds.width()/2
         val circleWidth = baseRadius / mNumOfCircles
 
@@ -246,9 +244,11 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     private fun getBitmapFromDrawable() : Bitmap? {
         val d = mDrawable
         if(d is BitmapDrawable) {
+            mCanRotate = true
             return d.bitmap
         }
         mDrawable = resources.getDrawable(R.drawable.ic_broken_image, null)
+        mCanRotate = false
         return mDrawable.toBitmap()
     }
 }

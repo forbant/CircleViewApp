@@ -1,10 +1,12 @@
 package com.example.circleviewapp
 
+import android.animation.ObjectAnimator
 import android.app.Activity
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore.Images.Media
+import android.view.View.ROTATION
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -14,6 +16,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val animator = ObjectAnimator.ofFloat(circleView, ROTATION, 360f, 0f).apply {
+            duration = 1000
+        }
+        circleView.endAnimation = animator
 
         fabInsertImage.setOnClickListener {
             val intentPick = Intent(Intent.ACTION_PICK, Media.EXTERNAL_CONTENT_URI)

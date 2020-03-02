@@ -48,10 +48,6 @@ class Ring(bitmap: Bitmap) {
         ringAngle = 0f
     }
 
-    override fun toString(): String {
-        return super.toString()
-    }
-
     fun tryToSnap(stickAngle: Int) {
         when {
             (ringAngle < stickAngle && ringAngle > 0) -> rotateRing(-ringAngle)
@@ -62,5 +58,4 @@ class Ring(bitmap: Bitmap) {
     fun isInRightPosition(): Boolean {
         return ringAngle == 0f
     }
-
 }
