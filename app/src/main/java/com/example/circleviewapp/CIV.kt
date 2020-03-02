@@ -1,6 +1,7 @@
 package com.example.circleviewapp
 
 import android.animation.ObjectAnimator
+import android.app.Activity
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
@@ -9,9 +10,9 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.AttributeSet
+import android.util.DisplayMetrics
 import android.view.MotionEvent
 import android.view.View
-import androidx.core.graphics.drawable.toBitmap
 import kotlin.math.*
 
 class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
@@ -25,24 +26,25 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             this(context, null)
 
     private val ringsList: List<Ring>
-    private var mBitmap: Bitmap
+    private var bitmap: Bitmap
 
     //from attrs
-    var mDrawable : Drawable  = resources.getDrawable(R.drawable.ic_broken_image, null)
-    private var mNumOfCircles: Int = 1
+    private var drawableResource: Drawable? = null
+    private var numOfCircles: Int = 1
 
-    var mSnap: Boolean = false
-    var mCanRotate = true
+    private var snap: Boolean = false
+    private var canRotate = true
+    private var mStickAngle: Int = 0
     var endAnimation : ObjectAnimator? = null
-    var mStickAngle: Int = 0
 
     ////For test/////
-    var offsetRaw: Double = 0.0
-    var offsetAngle: Double = 0.0
-    var pointedAngle = 0.0
-    var startAngle: Double = 0.0
-    var moveToAngle: Double = 0.0
-    var index : Int = 0
+    private var offsetRaw: Double = 0.0
+    private var offsetAngle: Double = 0.0
+    private var pointedAngle = 0.0
+    private var startAngle: Double = 0.0
+    private var moveToAngle: Double = 0.0
+    private var index: Int = 0
+    private val errorText = "Error during processing drawable"
 
     init {
         if(attrs != null) {
@@ -53,22 +55,21 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
                 defStyleRes
             )
 
-            var id = attributesArray.getResourceId(R.styleable.CIV_src, 0)
-            if(id == 0) id = R.drawable.ic_broken_image
-
-            mDrawable = resources.getDrawable(id, null)
-            mNumOfCircles = attributesArray.getInt(R.styleable.CIV_numOfCircles, 1)
-            mSnap = attributesArray.getBoolean(R.styleable.CIV_snap, false)
+            val id = attributesArray.getResourceId(R.styleable.CIV_src, 0)
+            if(id != 0)
+                drawableResource = resources.getDrawable(id, null)
+            numOfCircles = attributesArray.getInt(R.styleable.CIV_numOfCircles, 1)
+            snap = attributesArray.getBoolean(R.styleable.CIV_snap, false)
             mStickAngle = attributesArray.getInt(R.styleable.CIV_snapAngleRange, 0)
 
             attributesArray.recycle()
         }
 
-        mBitmap = getBitmapFromDrawable()!!
+        bitmap = getBitmapFromDrawable()
 
         val rings = ArrayList<Ring>()
-        repeat(mNumOfCircles) {
-            rings.add(Ring(mBitmap))
+        repeat(numOfCircles) {
+            rings.add(Ring(bitmap))
         }
         ringsList = rings
     }
@@ -98,7 +99,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if(mCanRotate) {
+        if(canRotate) {
             when(event?.action) {
                 MotionEvent.ACTION_DOWN -> {
                     if(!touchedInCircle(event.x, event.y)) return false
@@ -121,7 +122,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
                     startAngle = moveToAngle
                 }
                 MotionEvent.ACTION_UP -> {
-                    if(mSnap)
+                    if(snap)
                         tryToSnap()
                     endAnimation?.let {
                         var inRow = true
@@ -156,34 +157,35 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
             ((width / 2.0) - x).pow(2.0) + ((height / 2.0) - y).pow(2.0)
         )
         val baseRadius = ringsList[0].bounds.width()/2
-        val circleWidth = baseRadius / mNumOfCircles
+        val circleWidth = baseRadius / numOfCircles
 
         return ((-distance+baseRadius)/circleWidth).toInt()
     }
 
     private fun rescaleBitmap() {
-        val scale : Float = if(mBitmap.width < mBitmap.height) {
-            ringsList[0].bounds.width() / mBitmap.width
+        val scale : Float = if(bitmap.width < bitmap.height) {
+            ringsList[0].bounds.width() / bitmap.width
         } else {
-            ringsList[0].bounds.height() / mBitmap.height
+            ringsList[0].bounds.height() / bitmap.height
         }
-        mBitmap = Bitmap.createScaledBitmap(
-            mBitmap,
-            (mBitmap.width*scale).toInt(),
-            (mBitmap.height*scale).toInt(),
+        bitmap = Bitmap.createScaledBitmap(
+            bitmap,
+            (bitmap.width*scale).toInt(),
+            (bitmap.height*scale).toInt(),
             false)
         for (ring in ringsList) {
-            ring.bitmap = mBitmap
+            ring.bitmap = bitmap
         }
     }
 
     fun setImageBitmap(uri: Uri?) {
         post {
-            mBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri!!))
             } else {
                 MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
             }
+            canRotate = true
             processBitmap()
         }
     }
@@ -203,13 +205,13 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         val dy: Float
         val scale : Float
 
-        if(mBitmap.width < mBitmap.height) {
-            scale = ringsList[0].bounds.width() / mBitmap.width
+        if(bitmap.width < bitmap.height) {
+            scale = ringsList[0].bounds.width() / bitmap.width
             dx = ringsList[0].bounds.left
-            dy = ringsList[0].bounds.top - (mBitmap.height * scale / 2f) + (ringsList[0].bounds.width() / 2f)
+            dy = ringsList[0].bounds.top - (bitmap.height * scale / 2f) + (ringsList[0].bounds.width() / 2f)
         } else {
-            scale = ringsList[0].bounds.height() / mBitmap.height
-            dx = ringsList[0].bounds.left - (mBitmap.width * scale / 2f) + (ringsList[0].bounds.width() / 2f)
+            scale = ringsList[0].bounds.height() / bitmap.height
+            dx = ringsList[0].bounds.left - (bitmap.width * scale / 2f) + (ringsList[0].bounds.width() / 2f)
             dy = ringsList[0].bounds.top
         }
 
@@ -234,21 +236,38 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
         ringsList.forEach {ring ->
             ring.bounds.set(left, top, left + circleDiameter, top + circleDiameter)
-            left += contentHeight/mNumOfCircles/2
-            top += contentHeight/mNumOfCircles/2
-            circleDiameter -= diameter/mNumOfCircles
+            left += contentHeight/numOfCircles/2
+            top += contentHeight/numOfCircles/2
+            circleDiameter -= diameter/numOfCircles
         }
 
     }
 
-    private fun getBitmapFromDrawable() : Bitmap? {
-        val d = mDrawable
-        if(d is BitmapDrawable) {
-            mCanRotate = true
-            return d.bitmap
+    private fun getBitmapFromDrawable() : Bitmap {
+        drawableResource?.let {
+            if(it is BitmapDrawable)
+                return it.bitmap
         }
-        mDrawable = resources.getDrawable(R.drawable.ic_broken_image, null)
-        mCanRotate = false
-        return mDrawable.toBitmap()
+        return errorBitmap()
+    }
+
+    private fun errorBitmap() : Bitmap {
+        canRotate = false
+        val displayMetrics = DisplayMetrics()
+        (context as Activity).windowManager
+            .defaultDisplay
+            .getMetrics(displayMetrics)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 32f
+            color = Color.BLACK
+            textAlign = Paint.Align.CENTER
+        }
+
+        val size = min(displayMetrics.widthPixels, displayMetrics.heightPixels) / 2
+        val b = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(b)
+        val offset = size/2f
+        canvas.drawText(errorText, offset, offset, paint)
+        return  b
     }
 }
