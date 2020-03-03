@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.provider.MediaStore.Images.Media
 import android.view.View.ROTATION
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
 
@@ -26,6 +27,14 @@ class MainActivity : AppCompatActivity() {
             val intentPick = Intent(Intent.ACTION_PICK, Media.EXTERNAL_CONTENT_URI)
             startActivityForResult(intentPick, REQUEST_PICK)
         }
+
+        fabRandomRotate.setOnClickListener {
+            repeat(circleView.getCircleCount()) {
+                val randomAngle = Random.nextInt(-180, 180)
+                circleView.rotateRingByIndex(randomAngle.toFloat(), it)
+            }
+        }
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

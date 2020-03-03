@@ -13,6 +13,7 @@ import android.util.AttributeSet
 import android.util.DisplayMetrics
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.graphics.drawable.toBitmap
 import kotlin.math.*
 
 class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
@@ -30,6 +31,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
     //from attrs
     private var drawableResource: Drawable? = null
+    private var drawableError: Drawable? = null
     private var numOfCircles: Int = 1
 
     private var snap: Boolean = false
@@ -55,9 +57,12 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
                 defStyleRes
             )
 
-            val id = attributesArray.getResourceId(R.styleable.CIV_src, 0)
-            if(id != 0)
-                drawableResource = resources.getDrawable(id, null)
+            val drawableId = attributesArray.getResourceId(R.styleable.CIV_src, 0)
+            if(drawableId != 0)
+                drawableResource = resources.getDrawable(drawableId, null)
+            val drawableErrorId = attributesArray.getResourceId(R.styleable.CIV_drawableError, 0)
+            if(drawableErrorId != 0)
+                drawableError = resources.getDrawable(drawableErrorId, null)
             numOfCircles = attributesArray.getInt(R.styleable.CIV_numOfCircles, 1)
             snap = attributesArray.getBoolean(R.styleable.CIV_snap, false)
             mStickAngle = attributesArray.getInt(R.styleable.CIV_snapAngleRange, 0)
@@ -118,7 +123,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
                     offsetRaw = pointedAngle - offsetAngle
                     offsetAngle = pointedAngle
                     moveToAngle = startAngle + offsetRaw
-                    rotateWithMatrix((moveToAngle-startAngle).toFloat(), index)
+                    rotateRingByIndex((moveToAngle-startAngle).toFloat(), index)
                     startAngle = moveToAngle
                 }
                 MotionEvent.ACTION_UP -> {
@@ -140,9 +145,13 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         invalidate()
     }
 
-    private fun rotateWithMatrix(angle: Float, index: Int) {
+    fun rotateRingByIndex(angle: Float, index: Int) {
         ringsList[index].rotateRing(angle)
         invalidate()
+    }
+
+    fun getCircleCount(): Int {
+        return numOfCircles
     }
 
     private fun touchedInCircle(x: Float, y: Float): Boolean {
@@ -253,6 +262,9 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
     private fun errorBitmap() : Bitmap {
         canRotate = false
+        drawableError?.let {
+            return it.toBitmap()
+        }
         val displayMetrics = DisplayMetrics()
         (context as Activity).windowManager
             .defaultDisplay
