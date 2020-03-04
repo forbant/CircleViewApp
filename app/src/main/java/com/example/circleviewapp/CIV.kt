@@ -138,8 +138,10 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
     }
 
     fun rotateRingByIndex(angle: Float, index: Int) {
-        ringsList[index].rotateRing(angle)
-        invalidate()
+        if(canRotate) {
+            ringsList[index].rotateRing(angle)
+            invalidate()
+        }
     }
 
     fun getCircleCount(): Int {
