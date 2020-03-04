@@ -16,17 +16,17 @@ import android.view.View
 import androidx.core.graphics.drawable.toBitmap
 import kotlin.math.*
 
-class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
+class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
     View(context, attrs, defStyleAttr, defStyleRes) {
 
-    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) :
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
             this(context, attrs, defStyleAttr, 0)
-    constructor(context: Context?, attrs: AttributeSet?) :
+    constructor(context: Context, attrs: AttributeSet?) :
             this(context, attrs, 0)
-    constructor(context: Context?) :
+    constructor(context: Context) :
             this(context, null)
 
-    private val ringsList: List<Ring>
+    private val ringsList = mutableListOf<Ring>()
     private var bitmap: Bitmap
 
     //from attrs
@@ -49,7 +49,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
     init {
         if(attrs != null) {
-            val attributesArray = context!!.obtainStyledAttributes(
+            val attributesArray = context.obtainStyledAttributes(
                 attrs,
                 R.styleable.CIV,
                 defStyleAttr,
@@ -71,11 +71,9 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
         bitmap = getBitmapFromDrawable()
 
-        val rings = mutableListOf<Ring>()
         repeat(numOfCircles) {
-            rings.add(Ring(bitmap))
+            ringsList.add(Ring(bitmap))
         }
-        ringsList = rings
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -139,11 +137,6 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         return true
     }
 
-    private fun tryToSnap() {
-        ringsList[index].tryToSnap(mStickAngle)
-        invalidate()
-    }
-
     fun rotateRingByIndex(angle: Float, index: Int) {
         ringsList[index].rotateRing(angle)
         invalidate()
@@ -153,11 +146,21 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         return numOfCircles
     }
 
-    private fun touchedInCircle(x: Float, y: Float): Boolean {
-        val distance = sqrt(
-            ((width / 2.0) - x).pow(2.0) + ((height / 2.0) - y).pow(2.0)
-        )
-        return distance <= (ringsList[0].bounds.width() / 2)
+    fun setImageBitmap(uri: Uri) {
+        post {
+            bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
+            } else {
+                MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+            }
+            canRotate = true
+            processBitmap()
+        }
+    }
+
+    private fun tryToSnap() {
+        if(ringsList[index].tryToSnap(mStickAngle))
+            invalidate()
     }
 
     private fun getPointedCircleIndex(x: Float, y: Float) : Int {
@@ -186,16 +189,11 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         }
     }
 
-    fun setImageBitmap(uri: Uri?) {
-        post {
-            bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri!!))
-            } else {
-                MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-            }
-            canRotate = true
-            processBitmap()
-        }
+    private fun touchedInCircle(x: Float, y: Float): Boolean {
+        val distance = sqrt(
+            ((width / 2.0) - x).pow(2.0) + ((height / 2.0) - y).pow(2.0)
+        )
+        return distance <= (ringsList[0].bounds.width() / 2)
     }
 
     private fun processBitmap() {
@@ -243,7 +241,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
         var circleDiameter = diameter
 
         ringsList.forEach {ring ->
-            ring.bounds.set(left, top, left + circleDiameter, top + circleDiameter)
+            ring.setBounds(left, top, left + circleDiameter, top + circleDiameter)
             left += contentHeight/numOfCircles/2
             top += contentHeight/numOfCircles/2
             circleDiameter -= diameter/numOfCircles

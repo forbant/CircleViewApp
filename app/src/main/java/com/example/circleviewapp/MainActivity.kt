@@ -52,9 +52,11 @@ class MainActivity : Activity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        data?.run {
-            if(requestCode == REQUEST_PICK && resultCode == Activity.RESULT_OK) {
-                circleView.setImageBitmap(this.data)
+        if(requestCode == REQUEST_PICK && resultCode == Activity.RESULT_OK) {
+            data?.let {
+                it.data?.run{
+                    circleView.setImageBitmap(this)
+                }
             }
         }
     }
