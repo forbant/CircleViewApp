@@ -39,7 +39,6 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
     private var mStickAngle: Int = 0
     var endAnimation : ObjectAnimator? = null
 
-    ////For test/////
     private var offsetRaw: Double = 0.0
     private var offsetAngle: Double = 0.0
     private var pointedAngle = 0.0
@@ -72,7 +71,7 @@ class CIV(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRe
 
         bitmap = getBitmapFromDrawable()
 
-        val rings = ArrayList<Ring>()
+        val rings = mutableListOf<Ring>()
         repeat(numOfCircles) {
             rings.add(Ring(bitmap))
         }

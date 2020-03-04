@@ -3,8 +3,8 @@
     <declare-styleable name="CIV">
         <attr name="src" format="reference"/>
         <attr name="snap" format="boolean"/>
-        <attr name="numOfCircles" format="integer"/>
         <attr name="snapAngleRange" format="integer"/>
+        <attr name="numOfCircles" format="integer"/>
         <attr name="drawableError" format="reference"/>
     </declare-styleable>
 </resources>
