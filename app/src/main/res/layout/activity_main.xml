@@ -2,23 +2,32 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/design_default_color_error"
     tools:context=".MainActivity">
 
+    <ImageView
+        android:id="@+id/backgroundView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/icon_cat"
+        android:scaleType="centerCrop"/>
+
     <com.example.circleviewapp.CIV
         android:id="@+id/circleView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="100dp"
-        app:snap="true"
-        app:src="@drawable/icon_cat"
-        app:snapAngleRange="10"
-        app:numOfCircles="3"
+        android:padding="10dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:numOfCircles="3"
+        app:snap="true"
+        app:snapAngleRange="10"
+        app:src="@drawable/icon_cat" />
 
     <RelativeLayout
         android:layout_width="match_parent"
