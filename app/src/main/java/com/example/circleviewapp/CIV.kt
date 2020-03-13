@@ -19,6 +19,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
+import com.example.circleviewapp.shapes.Circle
+import com.example.circleviewapp.shapes.Shape
 import kotlin.math.*
 
 class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
@@ -56,6 +58,9 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
     private var moveToAngle: Double = 0.0
     private var index: Int = 0
     private val errorText = "Error during processing drawable"
+    
+    ///////SHAPE/////////
+    var shape: Shape = Circle()
 
     init {
         if(attrs != null) {
@@ -109,6 +114,7 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
 
     override fun onDraw(canvas: Canvas?) {
         canvas?.run {
+            shape.drawOn(canvas)
             for(item in ringsList) {
                 canvas.drawOval(item.bounds, item.paint)
             }
