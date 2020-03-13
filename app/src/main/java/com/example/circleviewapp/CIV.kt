@@ -9,13 +9,15 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import android.text.Layout
+import android.renderscript.Allocation
+import android.renderscript.Element
+import android.renderscript.RenderScript
+import android.renderscript.ScriptIntrinsicBlur
 import android.util.AttributeSet
 import android.util.DisplayMetrics
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
-import androidx.constraintlayout.widget.ConstraintLayout
+import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
 import kotlin.math.*
 
@@ -29,6 +31,9 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
     constructor(context: Context) :
             this(context, null)
 
+    private val defaultScale = 2
+    private val defaultBlurRadius = 15f
+
     private val ringsList = mutableListOf<Ring>()
     private var bitmap: Bitmap
 
@@ -36,7 +41,9 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
     private var drawableResource: Drawable? = null
     private var drawableError: Drawable? = null
     private var numOfCircles: Int = 1
-
+    private var backgroundID: Int = 0
+    private var backgroundScale: Int = defaultScale
+    private var backgroundBlurRadius: Float = defaultBlurRadius
     private var snap: Boolean = false
     private var canRotate = true
     private var mStickAngle: Int = 0
@@ -65,6 +72,11 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
             val drawableErrorId = attributesArray.getResourceId(R.styleable.CIV_drawableError, 0)
             if(drawableErrorId != 0)
                 drawableError = resources.getDrawable(drawableErrorId, null)
+
+            backgroundID = attributesArray.getResourceId(R.styleable.CIV_backgroundBlurView, 0)
+            backgroundScale = attributesArray.getInt(R.styleable.CIV_backgroundScale, defaultScale)
+            backgroundBlurRadius = attributesArray.getFloat(R.styleable.CIV_backgroundBlurRadius, defaultBlurRadius)
+
             numOfCircles = attributesArray.getInt(R.styleable.CIV_numOfCircles, 1)
             snap = attributesArray.getBoolean(R.styleable.CIV_snap, false)
             mStickAngle = attributesArray.getInt(R.styleable.CIV_snapAngleRange, 0)
@@ -205,6 +217,30 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
         rescaleBitmap()
         updateBitmapMatrix()
         updateShader()
+        blurBackground()
+    }
+
+    private fun blurBackground() {
+        rootView.findViewById<ImageView>(backgroundID)?.setImageBitmap(blur(bitmap))
+    }
+
+    private fun blur(bitmap: Bitmap): Bitmap{
+        val dw = bitmap.width / backgroundScale
+        val dh = bitmap.height / backgroundScale
+        val rescaledBitmap = Bitmap.createScaledBitmap(bitmap,dw,dh,false)
+
+        val outputBitmap = Bitmap.createBitmap(rescaledBitmap)
+        val renderScript = RenderScript.create(context)
+        val tmpIn = Allocation.createFromBitmap(renderScript, rescaledBitmap)
+        val tmpOut = Allocation.createFromBitmap(renderScript, outputBitmap)
+
+        val theIntrinsic = ScriptIntrinsicBlur.create(renderScript, Element.U8_4(renderScript))
+        theIntrinsic.setRadius(25f)
+        theIntrinsic.setInput(tmpIn)
+        theIntrinsic.forEach(tmpOut)
+        tmpOut.copyTo(outputBitmap)
+
+        return outputBitmap
     }
 
     private fun updateShader() {

@@ -6,5 +6,8 @@
         <attr name="snapAngleRange" format="integer"/>
         <attr name="numOfCircles" format="integer"/>
         <attr name="drawableError" format="reference"/>
+        <attr name="backgroundBlurView" format="reference"/>
+        <attr name="backgroundScale" format="integer"/>
+        <attr name="backgroundBlurRadius" format="float"/>
     </declare-styleable>
 </resources>

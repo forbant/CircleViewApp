@@ -12,7 +12,6 @@
         android:id="@+id/backgroundView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/icon_cat"
         android:scaleType="centerCrop"/>
 
     <com.example.circleviewapp.CIV
@@ -27,7 +26,8 @@
         app:numOfCircles="3"
         app:snap="true"
         app:snapAngleRange="10"
-        app:src="@drawable/icon_cat" />
+        app:src="@drawable/icon_cat"
+        app:backgroundBlurView="@id/backgroundView"/>
 
     <RelativeLayout
         android:layout_width="match_parent"
