@@ -33,9 +33,9 @@ abstract class Element(bitmap: Bitmap) {
         bounds.set(left, top, right, bottom)
     }
 
-    fun setMatrix() {
-        matrix.setScale(1f,1f)
-        matrix.postTranslate(1f,1f)
+    fun setMatrix(scale: Float, dx: Float, dy: Float) {
+        matrix.setScale(scale,scale)
+        matrix.postTranslate(dx,dy)
     }
 
     fun updateShader() {

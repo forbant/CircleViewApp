@@ -3,7 +3,6 @@ package com.example.circleviewapp.shapes
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import com.example.circleviewapp.shapes.elements.Element
-import com.example.circleviewapp.shapes.elements.RingElement
 
 abstract class Shape(var numOfElements: Int, var bitmap: Bitmap) {
 
@@ -39,8 +38,21 @@ abstract class Shape(var numOfElements: Int, var bitmap: Bitmap) {
     }
 
     fun updateBitmapMatrix() {
+        val dx: Float
+        val dy: Float
+        val scale : Float
+
+        if(bitmap.width < bitmap.height) {
+            scale = elements[0].bounds.width() / bitmap.width
+            dx = elements[0].bounds.left
+            dy = elements[0].bounds.top - (bitmap.height * scale / 2f) + (elements[0].bounds.width() / 2f)
+        } else {
+            scale = elements[0].bounds.height() / bitmap.height
+            dx = elements[0].bounds.left - (bitmap.width * scale / 2f) + (elements[0].bounds.width() / 2f)
+            dy = elements[0].bounds.top
+        }
         elements.forEach {
-            it.setMatrix()
+            it.setMatrix(scale, dx, dy)
         }
     }
 
