@@ -37,7 +37,7 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
     private val defaultBlurRadius = 15f
 
     private val ringsList = mutableListOf<Ring>()
-    private var bitmap: Bitmap
+    private var bitmap: Bitmap = Bitmap.createBitmap(1,1, Bitmap.Config.ARGB_8888)
 
     //from attrs
     private var drawableResource: Drawable? = null
@@ -60,7 +60,7 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
     private val errorText = "Error during processing drawable"
     
     ///////SHAPE/////////
-    var shape: Shape = Circle()
+    private var shape: Shape
 
     init {
         if(attrs != null) {
@@ -91,6 +91,8 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
 
         bitmap = getBitmapFromDrawable()
 
+        shape = Circle(5, bitmap)
+
         repeat(numOfCircles) {
             ringsList.add(Ring(bitmap))
         }
@@ -108,53 +110,53 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        updateCircleDrawBounds()
+        updateShapeDrawBounds()
         processBitmap()
     }
 
     override fun onDraw(canvas: Canvas?) {
         canvas?.run {
             shape.drawOn(canvas)
-            for(item in ringsList) {
-                canvas.drawOval(item.bounds, item.paint)
-            }
+//            for(item in ringsList) {
+//                canvas.drawOval(item.bounds, item.paint)
+//            }
         }
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if(canRotate) {
-            when(event?.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    if(!touchedInCircle(event.x, event.y)) return false
-
-                    offsetAngle = Math.toDegrees(
-                        atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
-                        .roundToInt()
-                        .toDouble()
-                    index = getPointedCircleIndex(event.x, event.y)
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    pointedAngle = Math.toDegrees(
-                        atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
-                        .roundToInt()
-                        .toDouble()
-                    offsetRaw = pointedAngle - offsetAngle
-                    offsetAngle = pointedAngle
-                    moveToAngle = startAngle + offsetRaw
-                    rotateRingByIndex((moveToAngle-startAngle).toFloat(), index)
-                    startAngle = moveToAngle
-                }
-                MotionEvent.ACTION_UP -> {
-                    if(snap)
-                        tryToSnap()
-                    endAnimation?.let {
-                        var inRow = true
-                        ringsList.forEach { ring -> if(!ring.isInRightPosition()) inRow = false }
-                        if(inRow) it.start()
-                    }
-                }
-            }
-        }
+//        if(canRotate) {
+//            when(event?.action) {
+//                MotionEvent.ACTION_DOWN -> {
+//                    if(!touchedInCircle(event.x, event.y)) return false
+//
+//                    offsetAngle = Math.toDegrees(
+//                        atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
+//                        .roundToInt()
+//                        .toDouble()
+//                    index = getPointedCircleIndex(event.x, event.y)
+//                }
+//                MotionEvent.ACTION_MOVE -> {
+//                    pointedAngle = Math.toDegrees(
+//                        atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
+//                        .roundToInt()
+//                        .toDouble()
+//                    offsetRaw = pointedAngle - offsetAngle
+//                    offsetAngle = pointedAngle
+//                    moveToAngle = startAngle + offsetRaw
+//                    rotateRingByIndex((moveToAngle-startAngle).toFloat(), index)
+//                    startAngle = moveToAngle
+//                }
+//                MotionEvent.ACTION_UP -> {
+//                    if(snap)
+//                        tryToSnap()
+//                    endAnimation?.let {
+//                        var inRow = true
+//                        ringsList.forEach { ring -> if(!ring.isInRightPosition()) inRow = false }
+//                        if(inRow) it.start()
+//                    }
+//                }
+//            }
+//        }
         return true
     }
 
@@ -197,11 +199,13 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
     }
 
     private fun rescaleBitmap() {
-        val scale : Float = if(bitmap.width < bitmap.height) {
+        shape.setRescaledBitmap(bitmap)
+        var scale : Float = if(bitmap.width < bitmap.height) {
             ringsList[0].bounds.width() / bitmap.width
         } else {
             ringsList[0].bounds.height() / bitmap.height
         }
+        scale++
         bitmap = Bitmap.createScaledBitmap(
             bitmap,
             (bitmap.width*scale).toInt(),
@@ -223,7 +227,7 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
         rescaleBitmap()
         updateBitmapMatrix()
         updateShader()
-        blurBackground()
+        //blurBackground()
     }
 
     private fun blurBackground() {
@@ -250,6 +254,7 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
     }
 
     private fun updateShader() {
+        shape.updateShader()
         ringsList.forEach { ring -> ring.updateShader() }
     }
 
@@ -257,6 +262,8 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
         val dx: Float
         val dy: Float
         val scale : Float
+
+        shape.updateBitmapMatrix()
 
         if(bitmap.width < bitmap.height) {
             scale = ringsList[0].bounds.width() / bitmap.width
@@ -271,7 +278,7 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
         ringsList.forEach { ring -> ring.updateBitmapMatrix(scale, dx, dy) }
     }
 
-    private fun updateCircleDrawBounds() {
+    private fun updateShapeDrawBounds() {
         val contentHeight = height - paddingBottom - paddingTop
         val contentWidth = width - paddingLeft - paddingRight
 
@@ -287,12 +294,14 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
         val diameter = contentHeight.coerceAtMost(contentWidth)
         var circleDiameter = diameter
 
-        ringsList.forEach {ring ->
-            ring.setBounds(left, top, left + circleDiameter, top + circleDiameter)
-            left += contentHeight/numOfCircles/2
-            top += contentHeight/numOfCircles/2
-            circleDiameter -= diameter/numOfCircles
-        }
+        shape.setShapeBounds(left, top, left + circleDiameter, top + circleDiameter)
+//
+//        ringsList.forEach {ring ->
+//            ring.setBounds(left, top, left + circleDiameter, top + circleDiameter)
+//            left += contentHeight/numOfCircles/2
+//            top += contentHeight/numOfCircles/2
+//            circleDiameter -= diameter/numOfCircles
+//        }
 
     }
 
