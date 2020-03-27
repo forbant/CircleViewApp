@@ -14,6 +14,8 @@ abstract class Shape(var numOfElements: Int, var bitmap: Bitmap) {
     var top = 0f
     var right = 0f
     var bottom = 0f
+    var centerX = 0f
+    var centerY = 0f
 
     fun drawOn(canvas: Canvas) {
         elements.forEach { element ->
@@ -61,4 +63,6 @@ abstract class Shape(var numOfElements: Int, var bitmap: Bitmap) {
             it.updateShader()
         }
     }
+
+    abstract fun touched(x: Float, y: Float): Boolean
 }

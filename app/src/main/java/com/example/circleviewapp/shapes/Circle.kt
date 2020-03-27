@@ -3,6 +3,8 @@ package com.example.circleviewapp.shapes
 import android.graphics.Bitmap
 import com.example.circleviewapp.shapes.elements.RingElement
 import java.lang.Float.max
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 class Circle(numOfElements: Int, bitmap: Bitmap): Shape(numOfElements, bitmap) {
 
@@ -17,6 +19,8 @@ class Circle(numOfElements: Int, bitmap: Bitmap): Shape(numOfElements, bitmap) {
         top = t
         right = r
         bottom = b
+        centerX = (right + left) / 2
+        centerY = (bottom + top) / 2
 
         shapeWidth = right - left
         shapeHeight = bottom - top
@@ -33,5 +37,14 @@ class Circle(numOfElements: Int, bitmap: Bitmap): Shape(numOfElements, bitmap) {
             diameter -= offsetDiameter
         }
 
+    }
+
+    override fun touched(x: Float, y: Float): Boolean {
+        val distance =
+            sqrt(
+                (centerX - x).pow(2) +
+                        (centerY - y).pow(2)
+            )
+        return distance <= elements[0].bounds.width()/2
     }
 }
