@@ -17,6 +17,14 @@ abstract class Shape(var numOfElements: Int, var bitmap: Bitmap) {
     var centerX = 0f
     var centerY = 0f
 
+    var offsetPosition = 0.0
+    var pointedIndex = 0
+
+    var offsetRaw: Double = 0.0
+    var pointedPosition = 0.0
+    var startPosition: Double = 0.0
+    var moveToPosition: Double = 0.0
+
     fun drawOn(canvas: Canvas) {
         elements.forEach { element ->
             element.drawOn(canvas)
@@ -64,5 +72,9 @@ abstract class Shape(var numOfElements: Int, var bitmap: Bitmap) {
         }
     }
 
-    abstract fun touched(x: Float, y: Float): Boolean
+    abstract fun isTouched(x: Float, y: Float): Boolean
+    abstract fun persistTouch(x: Float, y: Float)
+    abstract fun getPointedIndex(x: Float, y: Float): Int
+    abstract fun move(x: Float, y: Float)
+    abstract fun moveElementByIndex(shiftValue: Float, index: Int)
 }

@@ -15,7 +15,6 @@ import android.renderscript.RenderScript
 import android.renderscript.ScriptIntrinsicBlur
 import android.util.AttributeSet
 import android.util.DisplayMetrics
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
@@ -129,29 +128,28 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
             when(event?.action) {
                 MotionEvent.ACTION_DOWN -> {
                     //if(!touchedInCircle(event.x, event.y)) return false
-                    if(!shape.touched(event.x, event.y)) {
-                        Log.e("TOUCHED", "NOT IN SHAPE")
-                    } else {
-                        Log.e("TOUCHED", "IN SHAPE")
-                    }
-                    return false
+                    if(!shape.isTouched(event.x, event.y)) return false
 
-                    offsetAngle = Math.toDegrees(
-                        atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
-                        .roundToInt()
-                        .toDouble()
-                    index = getPointedCircleIndex(event.x, event.y)
+                    shape.persistTouch(event.x, event.y)
+
+//                    offsetAngle = Math.toDegrees(
+//                        atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
+//                        .roundToInt()
+//                        .toDouble()
+//                    index = getPointedCircleIndex(event.x, event.y)
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    pointedAngle = Math.toDegrees(
-                        atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
-                        .roundToInt()
-                        .toDouble()
-                    offsetRaw = pointedAngle - offsetAngle
-                    offsetAngle = pointedAngle
-                    moveToAngle = startAngle + offsetRaw
-                    rotateRingByIndex((moveToAngle-startAngle).toFloat(), index)
-                    startAngle = moveToAngle
+                    shape.move(event.x, event.y)
+                    invalidate()
+//                    pointedAngle = Math.toDegrees(
+//                        atan2(event.x - (width / 2.0), (height / 2.0) - event.y))
+//                        .roundToInt()
+//                        .toDouble()
+//                    offsetRaw = pointedAngle - offsetAngle
+//                    offsetAngle = pointedAngle
+//                    moveToAngle = startAngle + offsetRaw
+//                    rotateRingByIndex((moveToAngle-startAngle).toFloat(), index)
+//                    startAngle = moveToAngle
                 }
                 MotionEvent.ACTION_UP -> {
                     if(snap)

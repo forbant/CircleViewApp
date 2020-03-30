@@ -4,9 +4,9 @@ import android.graphics.*
 
 abstract class Element(bitmap: Bitmap) {
 
-    private var angle = 0f
-    private var matrix: Matrix = Matrix()
-    private var shader: Shader = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+    var angle = 0f
+    var matrix: Matrix = Matrix()
+    var shader: Shader = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
     var paint = Paint(Paint.ANTI_ALIAS_FLAG)
     var bounds = RectF()
 
@@ -44,4 +44,6 @@ abstract class Element(bitmap: Bitmap) {
         paint = Paint(Paint.ANTI_ALIAS_FLAG)
         paint.shader = shader
     }
+
+    abstract fun move(shiftValue: Float)
 }
