@@ -46,4 +46,5 @@ abstract class Element(bitmap: Bitmap) {
     }
 
     abstract fun move(shiftValue: Float)
+    abstract fun snap(): Boolean
 }

@@ -84,4 +84,15 @@ class Circle(numOfElements: Int, bitmap: Bitmap): Shape(numOfElements, bitmap) {
         elements[index].move(shiftValue)
     }
 
+    override fun snap(): Boolean {
+        return elements[pointedIndex].snap()
+    }
+
+    override fun isInRow(): Boolean {
+        elements.forEach {
+            if(it.angle != 0f) return false
+        }
+        return true
+    }
+
 }
