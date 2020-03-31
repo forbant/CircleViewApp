@@ -152,13 +152,12 @@ class CIV(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes
 //                    startAngle = moveToAngle
                 }
                 MotionEvent.ACTION_UP -> {
-//                    if(snap)
-//                        tryToSnap()
-//                    endAnimation?.let {
-//                        var inRow = true
-//                        ringsList.forEach { ring -> if(!ring.isInRightPosition()) inRow = false }
-//                        if(inRow) it.start()
-//                    }
+                    if(snap)
+                        if(shape.snap(mStickAngle))
+                            invalidate()
+                    endAnimation?.let {
+                        if(shape.isInRow()) it.start()
+                    }
                 }
             }
         }

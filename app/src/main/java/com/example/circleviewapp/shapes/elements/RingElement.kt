@@ -11,4 +11,13 @@ class RingElement(bitmap: Bitmap): Element(bitmap) {
         shader.setLocalMatrix(matrix)
     }
 
+    override fun snap(snapRange: Int): Boolean {
+        when {
+            (angle < snapRange && angle > 0) -> move(-angle)
+            (angle > -snapRange && angle < 0) -> move(-angle)
+            else -> return false
+        }
+        return true
+    }
+
 }

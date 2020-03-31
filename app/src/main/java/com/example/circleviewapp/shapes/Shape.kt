@@ -77,4 +77,6 @@ abstract class Shape(var numOfElements: Int, var bitmap: Bitmap) {
     abstract fun getPointedIndex(x: Float, y: Float): Int
     abstract fun move(x: Float, y: Float)
     abstract fun moveElementByIndex(shiftValue: Float, index: Int)
+    abstract fun snap(snapRange: Int): Boolean
+    abstract fun isInRow(): Boolean
 }
