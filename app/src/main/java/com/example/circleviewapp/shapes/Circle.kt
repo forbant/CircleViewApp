@@ -80,6 +80,7 @@ class Circle(numOfElements: Int, bitmap: Bitmap): Shape(numOfElements, bitmap) {
     }
 
     override fun moveElementByIndex(shiftValue: Float, index: Int) {
+        Log.e("ANGLE", shiftValue.toString())
         elements[index].move(shiftValue)
     }
 
